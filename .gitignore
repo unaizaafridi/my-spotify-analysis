@@ -1,0 +1,23 @@
+# Virtual environment
+venv/
+
+# Processed data (too large for git, also personal)
+data/processed/
+data/raw/
+
+# Credentials
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
