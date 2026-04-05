@@ -458,6 +458,133 @@ def get_listening_by_country(con: duckdb.DuckDBPyConnection) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 11. WEATHER vs LISTENING BEHAVIOUR
+# Joins dim_weather with fact_streams via dim_date to answer:
+# "Does the weather outside affect how much you listen and how engaged you are?"
+# ─────────────────────────────────────────────────────────────────────────────
+def get_weather_listening(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
+    """
+    Listening behaviour grouped by country, season and temperature category.
+    Each row = one country/season/temp combination with:
+      - avg daily hours listened
+      - avg skip rate
+      - avg streams per day
+      - avg sunshine hours (so we can see if grey days = more listening)
+      - rainy day count vs total days
+    """
+    return con.execute("""
+        SELECT
+            w.country,
+            w.season,
+            w.temp_category,
+
+            -- How many calendar days fall in this group
+            COUNT(DISTINCT w.date)                           AS total_days,
+
+            -- How many of those days had rain
+            SUM(w.is_rainy::INT)                             AS rainy_days,
+
+            -- Average streams per day in this weather group
+            ROUND(COUNT(f.stream_id) * 1.0 /
+                NULLIF(COUNT(DISTINCT w.date), 0), 1)        AS avg_streams_per_day,
+
+            -- Average listening hours per day
+            ROUND(SUM(f.minutes_played) / 60.0 /
+                NULLIF(COUNT(DISTINCT w.date), 0), 2)        AS avg_hours_per_day,
+
+            -- Skip rate — are you more patient in certain weather?
+            ROUND(AVG(f.skipped::INT) * 100, 1)             AS skip_pct,
+
+            -- Average temperature so we can plot on a continuous axis too
+            ROUND(AVG(w.temp_mean), 1)                       AS avg_temp_c,
+
+            -- Average sunshine hours — key for "grey day" hypothesis
+            ROUND(AVG(w.sunshine_hrs), 1)                    AS avg_sunshine_hrs
+
+        FROM dim_weather w
+        JOIN dim_date d
+            ON  w.date    = d.date
+        JOIN fact_streams f
+            ON  f.date_id = d.date_id
+            AND f.country = w.country
+
+        GROUP BY w.country, w.season, w.temp_category
+
+        -- Order seasons chronologically for charts
+        ORDER BY
+            w.country,
+            CASE w.season
+                WHEN 'Winter' THEN 1
+                WHEN 'Spring' THEN 2
+                WHEN 'Summer' THEN 3
+                WHEN 'Autumn' THEN 4
+            END,
+            w.temp_category
+    """).df()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. RAINY DAY vs DRY DAY COMPARISON
+# A focused comparison of listening behaviour on rainy vs dry days,
+# split by country. 
+# Also breaks down by season so we can separate the rain effect
+# from the season effect (e.g. winter = cold AND rainy AND more listening)
+# ─────────────────────────────────────────────────────────────────────────────
+def get_rainy_vs_dry(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
+    """
+    Side-by-side comparison of rainy vs dry days per country and season.
+    Returns avg streams per day, avg hours per day, and skip rate
+    for each rainy/dry × country × season combination.
+    """
+    return con.execute("""
+        SELECT
+            w.country,
+            w.season,
+
+            -- Label the day type clearly for chart legend
+            CASE WHEN w.is_rainy THEN 'Rainy' ELSE 'Dry' END  AS day_type,
+
+            -- Number of days in this group
+            COUNT(DISTINCT w.date)                              AS total_days,
+
+            -- Streams per day — higher on rainy days?
+            ROUND(COUNT(f.stream_id) * 1.0 /
+                NULLIF(COUNT(DISTINCT w.date), 0), 1)           AS avg_streams_per_day,
+
+            -- Hours per day — the clearest engagement signal
+            ROUND(SUM(f.minutes_played) / 60.0 /
+                NULLIF(COUNT(DISTINCT w.date), 0), 2)           AS avg_hours_per_day,
+
+            -- Skip rate — more patient when stuck inside?
+            ROUND(AVG(f.skipped::INT) * 100, 1)                AS skip_pct,
+
+            -- Average precipitation on rainy days (context)
+            ROUND(AVG(w.precipitation), 1)                     AS avg_precipitation_mm,
+
+            -- Average temp for context
+            ROUND(AVG(w.temp_mean), 1)                         AS avg_temp_c
+
+        FROM dim_weather w
+        JOIN dim_date d
+            ON  w.date    = d.date
+        JOIN fact_streams f
+            ON  f.date_id = d.date_id
+            AND f.country = w.country
+
+        GROUP BY w.country, w.season, w.is_rainy
+
+        ORDER BY
+            w.country,
+            CASE w.season
+                WHEN 'Winter' THEN 1
+                WHEN 'Spring' THEN 2
+                WHEN 'Summer' THEN 3
+                WHEN 'Autumn' THEN 4
+            END,
+            w.is_rainy DESC
+    """).df()
+    
+# ─────────────────────────────────────────────────────────────────────────────
 # Useful for checking output before wiring into the dashboard.
 # ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
@@ -528,4 +655,14 @@ if __name__ == "__main__":
     print("\n  Peak hours per country:")
     print(country_data["peak_hours"].to_string(index=False))
 
+    print(sep)
+    print("  11. Weather vs listening behaviour")
+    print(sep)
+    print(get_weather_listening(con).to_string(index=False))
+
+    print(sep)
+    print("  12. Rainy vs dry day comparison")
+    print(sep)
+    print(get_rainy_vs_dry(con).to_string(index=False))
+    
     con.close()
