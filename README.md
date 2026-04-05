@@ -53,6 +53,32 @@ interactive dashboard.
 
 ---
 
+## Analytical queries (src/queries.py)
+
+| Query | What it answers |
+|-------|----------------|
+| `get_summary_stats` | Headline KPIs — total hours, artists, skip rate, top country |
+| `get_top_artists` | Top N artists by hours listened (not play count) |
+| `get_top_tracks` | Top N tracks by plays + completion rate |
+| `get_hourly_heatmap` | Stream count for every hour × day of week combination |
+| `get_monthly_trend` | Listening hours and skip rate per calendar month |
+| `get_year_comparison` | Year-over-year streams, hours, skip rate, shuffle rate |
+| `get_skip_analysis` | Skip rate broken down by year and country |
+| `get_completion_leaders` | Tracks listened to fully, consistently (min 5 plays) |
+| `get_hidden_gems` | Low play count but ≥90% completion, ≤10% skip rate |
+| `get_listening_by_country` | Full behavioural profile split by DE vs PK |
+
+**Design decisions:**
+- Hours listened used instead of play count for artist ranking —
+  a 3-minute skip inflates play count but contributes almost nothing
+  to hours, making hours the more honest engagement metric
+- Minimum play count filters (3–5) applied to completion and gem
+  queries to ensure statistical reliability
+- Country queries restricted to DE and PK — the two countries with
+  meaningful sample sizes (14,070 and 9,740 streams respectively)
+
+  ---
+
 ## Data pipeline
 ```
 Streaming_History_Audio_*.json  (7 files, 2022–2026)
