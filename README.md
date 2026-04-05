@@ -19,3 +19,19 @@ interactive dashboard.
 ---
 
 ## Project structure
+
+---
+
+## Dataset
+
+| Metric | Value |
+|--------|-------|
+| Date range | Oct 2022 → Apr 2026 |
+| Total play events | 23,826 |
+| Total hours listened | 1,062 h |
+| Unique artists | 1,171 |
+| Unique tracks | 3,742 |
+| Countries | DE (14,070) · PK (9,740) |
+| Skip rate | 47.1% |
+
+---
