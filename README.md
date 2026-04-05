@@ -79,6 +79,45 @@ interactive dashboard.
 
   ---
 
+  ## Weather enrichment (src/weather.py)
+
+Historical daily weather data fetched from
+[Open-Meteo](https://open-meteo.com/) (no API key required)
+for the exact city corresponding to each listening day:
+
+| Country | City | Streams | Weather days |
+|---------|------|---------|--------------|
+| Germany (DE) | Berlin | 14,070 | 383 days |
+| Pakistan (PK) | Karachi | 9,740 | 472 days |
+
+Weather is only fetched for dates confirmed by `conn_country` in the
+listening history — so Berlin weather is never assigned to a day you
+were in Karachi, and vice versa.
+
+**Variables fetched per day:**
+temperature (max, min, mean), precipitation (mm), sunshine duration
+(hours), wind speed (max km/h)
+
+**Derived columns:**
+- `is_rainy` — precipitation > 1mm
+- `temp_category` — cold / cool / warm / hot
+- `season` — Winter / Spring / Summer / Autumn
+
+**Analysis this enables:**
+- Do you listen more on rainy days?
+- Does cold Berlin weather correlate with longer listening sessions?
+- Does sunshine duration affect skip rate?
+- How does season shift listening intensity between the two cities?
+
+> Note: Spotify deprecated the `audio_features` endpoint for new
+> developer apps in late 2024, removing access to track mood/energy
+> scores. The weather dimension partially compensates by providing
+> an external context layer for understanding *when* and *why*
+> listening behaviour changes even without knowing the acoustic
+> properties of the tracks themselves.
+
+---
+
 ## Data pipeline
 ```
 Streaming_History_Audio_*.json  (7 files, 2022–2026)
