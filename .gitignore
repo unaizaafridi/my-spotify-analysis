@@ -2,7 +2,8 @@
 venv/
 
 # Processed data (too large for git, also personal)
-data/processed/
+data/processed/*.parquet
+data/processed/*.duckdb.wal
 data/raw/
 
 # Credentials
