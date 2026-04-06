@@ -77,7 +77,45 @@ interactive dashboard.
 - Country queries restricted to DE and PK — the two countries with
   meaningful sample sizes (14,070 and 9,740 streams respectively)
 
-  ---
+---
+
+  ### Weather and listening behaviour
+
+Historical weather data from Open-Meteo was joined to the listening
+history to test whether external conditions affect Spotify usage.
+
+**Germany (Berlin) — temperature drives listening more than rain:**
+
+| Condition | Avg hours/day | Skip rate |
+|-----------|--------------|-----------|
+| Summer hot days (27°C+) | 3.92h | 62.1% |
+| Summer warm days (19°C) | 2.57h | 52.5% |
+| Winter cold days (0°C)  | 1.28h | 52.4% |
+| Spring cool days (11°C) | 0.69h | 51.0% |
+
+Counterintuitively, rainy days in Berlin did **not** produce more
+listening — dry summer days actually had higher stream counts than
+rainy ones. Heat appears to be a stronger driver than precipitation,
+possibly reflecting heatwave days spent indoors.
+
+**Pakistan (Karachi) — rain does drive listening:**
+
+| Condition | Avg hours/day | Skip rate |
+|-----------|--------------|-----------|
+| Rainy Autumn days | 2.21h | 41.7% |
+| Rainy Summer days (monsoon) | 1.21h | 35.6% |
+| Dry Summer days | 0.77h | 35.7% |
+
+In Karachi, rainy monsoon days correlate with noticeably more
+listening — the opposite pattern to Berlin. This likely reflects
+the difference between Berlin summer rain (brief, mild) and
+Karachi monsoon rain (heavy, keeps you indoors for hours).
+
+**Skip rate is consistently lower in Pakistan** (35–43%) than
+Germany (49–62%) across all weather conditions — suggesting the
+country effect is stronger than any weather effect on engagement.
+
+---
 
   ## Weather enrichment (src/weather.py)
 
